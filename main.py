@@ -8,7 +8,7 @@ import scipy.stats as stats
 font = {'size': 16}
 matplotlib.rc('font', **font)
 
-def getMogData(K:int=5, sigma:float=5, nDims:int=2 ,nSamples:int=100, debug:bool=True):
+def getMogData(K:int=5, sigma:float=1, nDims:int=2 ,nSamples:int=100, debug:bool=True):
     """Generates a MOG model and draws nSamples from it"""
     mu_k = np.random.multivariate_normal(mean=np.zeros(shape=nDims), cov=sigma**2 * np.identity(nDims), size=K)
     c = np.random.choice(range(K), size=nSamples, p=np.ones(shape=K) / K)
@@ -54,14 +54,14 @@ def getMogData(K:int=5, sigma:float=5, nDims:int=2 ,nSamples:int=100, debug:bool
 
     return x_df
 
-def plotGauusian(mean, var, label, ax):
+def plotGauusian(mean, var, label, ax, *args):
     std = np.sqrt(var)
     x_span = np.linspace(mean - 3 * std, mean + 3 * std, 100)
-    ax.plot(x_span, stats.norm.pdf(x_span, loc=mean, scale=std), label=label)
+    ax.plot(x_span, stats.norm.pdf(x_span, loc=mean, scale=std), label=label, *args)
 
 
 
-def CAVI(data:pd.DataFrame, sigma:float):
+def CAVI(data:pd.DataFrame, sigma:float, debug=True):
     """Coordinate Ascent Variational Inference for GMM"""
 
     n = len(data)
@@ -69,7 +69,7 @@ def CAVI(data:pd.DataFrame, sigma:float):
 
     # Initialization:
     m = np.random.normal(size=(1, K))
-    s2 = np.random.normal(size=(1, K))
+    s2 = np.ones(shape=(1, K))
     phi = np.ones(shape=(n, K)) / K
 
     x = np.expand_dims(data.x.to_numpy(), axis=1)  # set data as (n,1) ndarray
@@ -89,11 +89,36 @@ def CAVI(data:pd.DataFrame, sigma:float):
         m = (phi * x).sum(axis=0, keepdims=True) / den
         s2 = 1 / den
 
-        elbo.append(calcElbo(x, sigma, np.expand_dims(m, axis=0), np.expand_dims(s2, axis=0), phi))
+        elbo.append(calcElbo(x, sigma, m, s2, phi))
         if len(elbo) > 2 and np.abs(elbo[-2] - elbo[-1]) < conv_tol:
             is_conv = True
 
+    if debug:
+        fig, ax = plt.subplots(2, 1)
+        ax[0].plot(elbo)
+        ax[0].set_xlabel("Iteration")
+        ax[0].set_ylabel("ELBO(q)")
+        ax[0].set_title("CAVI Convergence Plot")
+        for k in range(K):
+            k_data = data.loc[data.c == k]
+            mean = k_data.mu.iloc[0][0]
+            var = k_data.loc[:, "cov"].iloc[0][0][0]
+            ax[1].scatter(k_data.x, stats.norm.pdf(k_data.x, loc=mean, scale=np.sqrt(var)), label=f"k={k} data")
+            mean_hat = m.squeeze()[k]
+            var_hat = s2.squeeze()[k]
+            # plotGauusian(mean_hat, var_hat, f"k={k} variational", ax)
+            if k == K - 1:
+                label = "variational factors"
+            else:
+                label = None
+            plotGauusian(np.random.normal(loc=mean_hat, scale=var_hat), 1, label, ax[1], '--k')
+        ax[1].set_xlabel("x")
+        ax[1].set_ylabel("Variational Approximating Factor")
+        ax[1].legend()
+
     return phi, m, s2, elbo
+
+
 
 def calcElbo(x: np.ndarray, sigma: float, m_hat: np.ndarray, s2_hat: np.ndarray, phi_hat: np.ndarray):
     """Calculates the evidence lower bound given the estimates of the latent variable's distributions
@@ -116,15 +141,13 @@ def calcElbo(x: np.ndarray, sigma: float, m_hat: np.ndarray, s2_hat: np.ndarray,
 if __name__ == "__main__":
     sigma = 5
     K = 5
-    data = getMogData(K=K, sigma=sigma, nDims=1)
-    phi, m, s2, elbo = CAVI(data, sigma)
+    data = getMogData(K=K, sigma=sigma, nDims=1, nSamples=int(1e3))
+
+    # inspect ELBOs sensitivity to initialization:
     fig, ax = plt.subplots()
-    for k in range(K):
-        k_data = data.loc[data.c == k]
-        mean = k_data.mu.iloc[0][0]
-        var = k_data.loc[:, "cov"].iloc[0][0][0]
-        ax.scatter(k_data.x, stats.norm.pdf(k_data.x, loc=mean, scale=np.sqrt(var)), label=f"k={k} data")
-        mean_hat = m.squeeze()[k]
-        var_hat = s2.squeeze()[k]
-        # plotGauusian(mean_hat, var_hat, f"k={k} variational", ax)
-        plotGauusian(np.random.normal(loc=mean_hat, scale=var_hat), 1, f"k={k} variational", ax)
+    for i in range(10):
+        phi, m, s2, elbo = CAVI(data, 1, debug=False)
+        ax.plot(elbo, 'b')
+    ax.set_xlabel("Iterations")
+    ax.set_ylabel("Elbo(q)")
+    ax.set_title("ELBO sensitivity to Different Initializations")
