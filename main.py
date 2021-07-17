@@ -7,6 +7,8 @@ from sklearn.datasets import make_spd_matrix
 import scipy.stats as stats
 font = {'size': 16}
 matplotlib.rc('font', **font)
+matplotlib.rc('figure', **{"figsize": (19.2, 9.77), "autolayout": True})
+#
 import seaborn as sns
 from utils import confidence_ellipse
 
@@ -44,7 +46,7 @@ def getMogData(K:int=5, sigma:float=1, nDims:int=2 ,nSamples:int=100, debug:bool
             cov = np.array(k_data.loc[:, "cov"].iloc[0])
             # plotGauusian(mean, cov, f"k={k}", ax[1])
             getCoord = lambda data, i: np.array([lst[i] for lst in data])
-            ax[1].plot(getCoord(k_data.x, 0), getCoord(k_data.x, 1), 'o')
+            ax[1].plot(getCoord(k_data.x, 0), getCoord(k_data.x, 1), 'o', label=f"k={k}")
             confidence_ellipse(getCoord(k_data.x, 0), getCoord(k_data.x, 1), ax=ax[1],
                                facecolor=ax[1].lines[-1].get_color(), alpha=0.5)
             # x_span = np.linspace(mean - 3*var, mean + 3*var, 100)
@@ -98,7 +100,7 @@ def CAVI(data:pd.DataFrame, sigma:float, debug=True):
     is_conv = False
     conv_tol = 1e-5
     elbo = []
-
+    iter = 0
     while not is_conv:
         # update variational assignments:
         phi = np.exp(x @ m - 0.5 * (s2 + m**2).sum(axis=0))
@@ -113,26 +115,37 @@ def CAVI(data:pd.DataFrame, sigma:float, debug=True):
         if len(elbo) > 2 and np.abs(elbo[-2] - elbo[-1]) < conv_tol:
             is_conv = True
 
+        if debug:
+            fig1, ax1 = plt.subplots()
+            for k in range(K):
+                k_data = data.loc[data.c == k]
+                getCoord = lambda data, i: np.array([lst[i] for lst in data])
+                ax1.plot(getCoord(k_data.x, 0), getCoord(k_data.x, 1), 'o', label=f"k={k}")
+                mean = np.random.multivariate_normal(mean=m[:, k].T, cov=np.identity(dims) * s2[:, k])
+                cov = np.identity(dims)
+                samples_hat = np.random.multivariate_normal(mean=mean, cov=cov, size=int(1e5))
+                dist_label = "Variational Distributions" if k == 0 else None
+                confidence_ellipse(samples_hat[:, 0], samples_hat[:, 1], ax=ax1,
+                                   facecolor="k", alpha=0.5, label=dist_label)
+
+            ax1.set_xlabel("$x_1$")
+            ax1.set_xlabel("$x_2$")
+            ax1.set_title(f"q(z) (Iteration #{iter})")
+            ax1.legend()
+            fig1.savefig(f"Figs/CAVI_{iter}.png")
+            plt.close(fig1)
+
+        iter += 1
+
     if debug:
-        fig, ax = plt.subplots(2, 1)
-        ax[0].plot(elbo)
-        ax[0].set_xlabel("Iteration")
-        ax[0].set_ylabel("ELBO(q)")
-        ax[0].set_title("CAVI Convergence Plot")
-        for k in range(K):
-            k_data = data.loc[data.c == k]
-            getCoord = lambda data, i: np.array([lst[i] for lst in data])
-            ax[1].plot(getCoord(k_data.x, 0), getCoord(k_data.x, 1), 'o')
-            mean = np.random.multivariate_normal(mean=m[:, k].T, cov=np.identity(dims) * s2[:, k])
-            cov = np.identity(dims)
-            samples_hat = np.random.multivariate_normal(mean=mean, cov=cov, size=int(1e5))
-            confidence_ellipse(samples_hat[:, 0], samples_hat[:, 1], ax=ax[1],
-                               facecolor="k", alpha=0.5, label="variational factors")
-
-        ax[1].set_xlabel("x")
-        ax[1].set_ylabel("Variational Approximating Factor")
-        ax[1].legend()
-
+        fig0, ax0= plt.subplots()
+        ax0.plot(elbo)
+        ax0.set_xlabel("Iteration")
+        ax0.set_ylabel("ELBO(q)")
+        ax0.set_title("CAVI Convergence Plot")
+        ax0.grid()
+        fig0.savefig("Figs/elbo.png")
+        plt.close(fig0)
     return phi, m, s2, elbo
 
 
@@ -162,10 +175,10 @@ if __name__ == "__main__":
 
     # inspect ELBOs sensitivity to initialization:
     phi, m, s2, elbo = CAVI(data, 1, debug=True)
-    fig, ax = plt.subplots()
-    for i in range(10):
-        phi, m, s2, elbo = CAVI(data, 1, debug=False)
-        ax.plot(elbo, 'b')
-    ax.set_xlabel("Iterations")
-    ax.set_ylabel("Elbo(q)")
-    ax.set_title("ELBO sensitivity to Different Initializations")
+    # fig, ax = plt.subplots()
+    # for i in range(10):
+    #     phi, m, s2, elbo = CAVI(data, 1, debug=False)
+    #     ax.plot(elbo, 'b')
+    # ax.set_xlabel("Iterations")
+    # ax.set_ylabel("Elbo(q)")
+    # ax.set_title("ELBO sensitivity to Different Initializations")
