@@ -3,9 +3,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 from pathlib import Path
+import datetime
 
 figPath = Path("Figs")
-import datetime
+if not figPath.is_dir():
+    figPath.mkdir()
 
 
 def genResDir():
@@ -134,6 +136,7 @@ def to_numpy(seriesOfLists):
     listOfLists = [x for x in seriesOfLists]
     return np.array(listOfLists)
 
+
 def genGif(path, dur=150):
     from PIL import Image
     flist = [x for x in path.iterdir() if x.match("*CAVI*")]
@@ -144,5 +147,5 @@ def genGif(path, dur=150):
     pil_list[0].save(Path(path, "ilustration.gif"), save_all=True, append_images=pil_list[1:], loop=0, duration=dur)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     genGif(Path("/home/omri/PycharmProjects/SignalProcessing2DataScience/FinalProject/Figs/sameData2/success2"))

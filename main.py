@@ -148,18 +148,18 @@ if __name__ == "__main__":
     data = getMogData(K=K, sigma=sigma, nSamples=int(1e3))
 
     # inspect ELBOs sensitivity to initialization:
-    # phi, m, s2, elbo = CAVI(data, 1, debug=True)
-    fig, ax = plt.subplots()
-    for i in range(10):
-        exp_path = Path(res_path, str(i))
-        exp_path.mkdir()
-        phi, m, s2, elbo = CAVI(data, 1, debug=True, path=exp_path)
-        ax.plot(elbo, 'b')
-        genGif(exp_path)
-    ax.set_xlabel("Iterations")
-    ax.set_ylabel("Elbo(q)")
-    ax.set_title("ELBO Sensitivity to Initialization")
-    ax.grid()
-    fig.savefig(Path(res_path, "elbo.png"))
-    plt.close(fig)
+    phi, m, s2, elbo = CAVI(data, 1, debug=True)
+    # fig, ax = plt.subplots()
+    # for i in range(10):
+    #     exp_path = Path(res_path, str(i))
+    #     exp_path.mkdir()
+    #     phi, m, s2, elbo = CAVI(data, 1, debug=True, path=exp_path)
+    #     ax.plot(elbo, 'b')
+    #     genGif(exp_path)
+    # ax.set_xlabel("Iterations")
+    # ax.set_ylabel("Elbo(q)")
+    # ax.set_title("ELBO Sensitivity to Initialization")
+    # ax.grid()
+    # fig.savefig(Path(res_path, "elbo.png"))
+    # plt.close(fig)
 
