@@ -4,6 +4,12 @@ The implementation, as well as a summarizing report, were conducted as part of t
 
 ![Alt Text](Figs/CAVI_ilustration.gif)
 
+# User Instructions:
+* Clone the repository to your local host using "git clone https://github.com/bermanz/Sp2DsFinalProject.git"
+* Get the required packages and dependencies by running "pip install -r requirements.txt"
+* Run "jupyter-lab" to invoke the jupyter lab interactive environment
+* Run the CAVI.ipynb notebook and explore.
+
 ## References
 <a id="1">[1]</a> 
 David M. Blei, Alp Kucukelbir, and Jon D. McAuliffe. 
