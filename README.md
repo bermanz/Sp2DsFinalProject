@@ -1,6 +1,6 @@
 CAVI for 2D GMM
 This repository revolves around the coordinate-ascent-variational inference algorithm, described in the paper "Variational Inference: A Review for Statisticians" By Blei et al [[1]](#1).
-The implementation, as well as a summarizing report, were conducted as part of the final project in the Signal-Processing-For-Data-Science course (0510726001) in Tel-Aviv University.
+The implementation, as well as a summarizing report, were conducted as part of the final project in the Signal-Processing-For-Data-Science course (05107-26001) in Tel-Aviv University.
 
 ## References
 <a id="1">[1]</a> 
