@@ -82,6 +82,7 @@ def getGlobalVar(x, phi, sigma):
     s2 = 1 / den
     return m, s2
 
+
 def calcElbo(x: np.ndarray, sigma: float, m_hat: np.ndarray, s2_hat: np.ndarray, phi_hat: np.ndarray):
     """Calculates the evidence lower bound given the estimates of the latent variable's distributions
 
